@@ -7,6 +7,13 @@ import (
 	"strings"
 )
 
+type config struct {
+	nextURL     *string
+	previousURL *string
+}
+
+var baseConfig config
+
 func startRepl() {
 	scanner := bufio.NewScanner(os.Stdin)
 	for {
@@ -21,10 +28,11 @@ func startRepl() {
 
 		command, exists := getCommands()[inputCommand]
 		if exists {
-			err := command.callback()
+			err := command.callback(&baseConfig)
 			if err != nil {
 				fmt.Println(err)
 			}
+			continue
 		} else {
 			fmt.Println("Unknown command")
 			continue
