@@ -9,6 +9,10 @@ import (
 
 const BaseURL = "https://pokeapi.co/api/v2/location-area"
 
+var client = &http.Client{
+	Timeout: time.Second * 23,
+}
+
 type LocationAreasResponse struct {
 	Count    int     `json:"count"`
 	Next     *string `json:"next"`
@@ -23,9 +27,6 @@ type LocationAreasResponse struct {
 func GetLocations(url string) (LocationAreasResponse, error) {
 	if url == "" {
 		return LocationAreasResponse{}, fmt.Errorf("url is empty")
-	}
-	client := &http.Client{
-		Timeout: time.Second * 10,
 	}
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {

@@ -30,6 +30,11 @@ func getCommands() map[string]cliCommand {
 			description: "Displays next 20 location areas",
 			callback:    commandMap,
 		},
+		"mapb": {
+			name:        "mapb",
+			description: "Dispalays previous 20 location areas",
+			callback:    commandMapB,
+		},
 	}
 }
 
@@ -62,8 +67,30 @@ func commandMap(c *config) error {
 	}
 
 	c.nextURL, c.previousURL = locations.Next, locations.Previous
-	for _, s := range locations.Results {
-		fmt.Println(s.Name)
+	for _, area := range locations.Results {
+		fmt.Println(area.Name)
 	}
+	return nil
+}
+
+func commandMapB(c *config) error {
+	var url string
+	if c.previousURL == nil {
+		fmt.Println("you are on the first page")
+		return nil
+	}
+
+	url = *c.previousURL
+	locations, err := pokeapi.GetLocations(url)
+	if err != nil {
+		return err
+	}
+
+	c.nextURL, c.previousURL = locations.Next, locations.Previous
+
+	for _, area := range locations.Results {
+		fmt.Println(area.Name)
+	}
+
 	return nil
 }
