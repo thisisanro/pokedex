@@ -10,7 +10,7 @@ import (
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(c *config) error
+	callback    func(c *config, args []string) error
 }
 
 func getCommands() map[string]cliCommand {
@@ -35,16 +35,21 @@ func getCommands() map[string]cliCommand {
 			description: "Dispalays previous 20 location areas",
 			callback:    commandMapB,
 		},
+		"explore": {
+			name:        "explore",
+			description: "Displays a list of Pokémon found at a location: explore <location-name>",
+			callback:    commandExplore,
+		},
 	}
 }
 
-func commandExit(c *config) error {
+func commandExit(c *config, args []string) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
-func commandHelp(c *config) error {
+func commandHelp(c *config, args []string) error {
 	fmt.Printf("Welcome to the Pokedex!\nUsage:\n\n")
 	for _, command := range getCommands() {
 		fmt.Printf("%s: %s\n", command.name, command.description)
@@ -53,7 +58,7 @@ func commandHelp(c *config) error {
 	return nil
 }
 
-func commandMap(c *config) error {
+func commandMap(c *config, args []string) error {
 	var url string
 	if c.nextURL == nil {
 		url = pokeapi.BaseURL
@@ -73,10 +78,10 @@ func commandMap(c *config) error {
 	return nil
 }
 
-func commandMapB(c *config) error {
+func commandMapB(c *config, args []string) error {
 	var url string
 	if c.previousURL == nil {
-		fmt.Println("you are on the first page")
+		fmt.Println("You are on the first page")
 		return nil
 	}
 
@@ -92,5 +97,26 @@ func commandMapB(c *config) error {
 		fmt.Println(area.Name)
 	}
 
+	return nil
+}
+
+func commandExplore(c *config, args []string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("explore usage: explore <area_name>")
+	}
+
+	area := args[0]
+	url := pokeapi.BaseURL + "/" + area
+	fmt.Printf("Exploring %v\n", area)
+	fmt.Println("Found Pokemon:")
+
+	names, err := pokeapi.GetAreaPokemonNames(url)
+	if err != nil {
+		return err
+	}
+
+	for _, n := range names {
+		fmt.Printf("- %s\n", n)
+	}
 	return nil
 }
