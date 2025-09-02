@@ -16,7 +16,7 @@ var client = &http.Client{
 	Timeout: time.Second * 23,
 }
 
-var cache = pokecache.NewCache(time.Second * 5)
+var cache = pokecache.NewCache(time.Minute * 5)
 
 type LocationAreasResponse struct {
 	Count    int     `json:"count"`
@@ -37,9 +37,26 @@ type PokemonNamesResponse struct {
 }
 
 type PokemonDetails struct {
-	BaseExperience int    `json:"base_experience"`
-	ID             int    `json:"id"`
+	Stats []struct {
+		BaseStat int `json:"base_stat"`
+		Effort   int `json:"effort"`
+		Stat     struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"stat"`
+	} `json:"stats"`
+	Types []struct {
+		Slot int `json:"slot"`
+		Type struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"type"`
+	} `json:"types"`
 	Name           string `json:"name"`
+	ID             int    `json:"id"`
+	BaseExperience int    `json:"base_experience"`
+	Height         int    `json:"height"`
+	Weight         int    `json:"weight"`
 }
 
 // get locations area struct from url

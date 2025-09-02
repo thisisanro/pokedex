@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"sort"
 
 	"github.com/thisisanro/pokedex/internal/pokeapi"
 )
@@ -43,8 +44,18 @@ func getCommands() map[string]cliCommand {
 		},
 		"catch": {
 			name:        "catch",
-			description: "Trying to catch pokemon by name: catch <pokemon-name>",
+			description: "Try to catch pokemon by name: catch <name>",
 			callback:    commandCatch,
+		},
+		"inspect": {
+			name:        "inspect",
+			description: "Displays the name of a Pokemon and prints the name, height, weight, stats and type(s): usage: inspect <name>",
+			callback:    commandInspect,
+		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "Displays all the names of the Pokemon the user has caught",
+			callback:    commandPokedex,
 		},
 	}
 }
@@ -56,9 +67,14 @@ func commandExit(c *config, args []string) error {
 }
 
 func commandHelp(c *config, args []string) error {
-	fmt.Printf("Welcome to the Pokedex!\nUsage:\n\n")
+	fmt.Printf("Pokedex Usage:\n\n")
+	commands := make([]string, 0, len(getCommands()))
 	for _, command := range getCommands() {
-		fmt.Printf("%s: %s\n", command.name, command.description)
+		commands = append(commands, fmt.Sprintf("%s: %s", command.name, command.description))
+	}
+	sort.Strings(commands)
+	for _, c := range commands {
+		fmt.Println(c)
 	}
 	fmt.Println()
 	return nil
@@ -147,6 +163,7 @@ func commandCatch(c *config, args []string) error {
 	} else {
 		c.pokedex[pokemon.Name] = pokemon
 		fmt.Printf("%s was caught!\n", name)
+		fmt.Println("You may now inspect it with the inspect command.")
 	}
 	return nil
 }
@@ -164,4 +181,47 @@ func catchChance(exp int) int {
 	default:
 		return hard
 	}
+}
+
+func commandInspect(c *config, args []string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("inspect usage: inspect <pokemon-name>")
+	}
+
+	name := args[0]
+
+	p, exists := c.pokedex[name]
+	if !exists {
+		return fmt.Errorf("you have not caught that pokemon yet")
+	}
+
+	fmt.Printf("Name: %s\nHeight: %d\nWeight: %d\nStats:\n", p.Name, p.Height, p.Weight)
+	for _, s := range p.Stats {
+		fmt.Printf("  -%s: %d\n", s.Stat.Name, s.BaseStat)
+	}
+
+	fmt.Println("Types:")
+	for _, t := range p.Types {
+		fmt.Printf("  - %s\n", t.Type.Name)
+	}
+
+	return nil
+}
+
+func commandPokedex(c *config, args []string) error {
+	fmt.Println("Your Pokedex:")
+	if len(c.pokedex) == 0 {
+		fmt.Println(" - (pokedex is empty)")
+		return nil
+	}
+
+	names := make([]string, 0, len(c.pokedex))
+	for name := range c.pokedex {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		fmt.Printf(" - %s\n", name)
+	}
+	return nil
 }
