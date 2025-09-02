@@ -38,87 +38,29 @@ type PokemonNamesResponse struct {
 
 // get locations area struct from url
 func GetLocations(url string) (LocationAreasResponse, error) {
-	if url == "" {
-		return LocationAreasResponse{}, fmt.Errorf("url is empty")
-	}
-
 	var locResp LocationAreasResponse
 
-	// return response if it's in cache
-	val, ok := cache.Get(url)
-	if ok {
-		if err := json.Unmarshal(val, &locResp); err != nil {
-			return LocationAreasResponse{}, err
-		}
-		return locResp, nil
-	}
-
-	// make new request and add to cache
-	req, err := http.NewRequest("GET", url, nil)
+	data, err := fetchData(url)
 	if err != nil {
 		return locResp, err
 	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return locResp, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return locResp, fmt.Errorf("bad response: %s", resp.Status)
-	}
 
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return locResp, err
-	}
-	cache.Add(url, data)
-
-	// return new response
 	if err := json.Unmarshal(data, &locResp); err != nil {
 		return locResp, err
 	}
 	return locResp, nil
 }
 
+// get pokemon names from location area
 func GetAreaPokemonNames(url string) ([]string, error) {
-	if url == "" {
-		return nil, fmt.Errorf("url is empty")
-	}
-
 	var pokeNames []string
 	var pokeResp PokemonNamesResponse
 
-	// return names if they're in cache
-	val, ok := cache.Get(url)
-	if ok {
-		if err := json.Unmarshal(val, &pokeResp); err != nil {
-			return nil, err
-		}
-		pokeNames = makeSliceOfNames(pokeResp)
-		return pokeNames, nil
-	}
-
-	// make new request, add response to cache
-	req, err := http.NewRequest("GET", url, nil)
+	data, err := fetchData(url)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("bad response: %s", resp.Status)
-	}
 
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	cache.Add(url, data)
-
-	//return slice of new names
 	if err := json.Unmarshal(data, &pokeResp); err != nil {
 		return nil, err
 	}
@@ -132,4 +74,35 @@ func makeSliceOfNames(pnr PokemonNamesResponse) []string {
 		names = append(names, p.Pokemon.Name)
 	}
 	return names
+}
+
+func fetchData(url string) ([]byte, error) {
+	if url == "" {
+		return nil, fmt.Errorf("url is empty")
+	}
+
+	// check cache and return if hit
+	if val, ok := cache.Get(url); ok {
+		return val, nil
+	}
+
+	// make new request, return response data and add it to cache
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("bad response: %s", resp.Status)
+	}
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	cache.Add(url, data)
+	return data, nil
 }
