@@ -10,7 +10,7 @@ import (
 	"github.com/thisisanro/pokedex/internal/pokecache"
 )
 
-const BaseURL = "https://pokeapi.co/api/v2/location-area"
+const BaseURL = "https://pokeapi.co/api/v2"
 
 var client = &http.Client{
 	Timeout: time.Second * 23,
@@ -34,6 +34,12 @@ type PokemonNamesResponse struct {
 			Name string `json:"name"`
 		} `json:"pokemon"`
 	} `json:"pokemon_encounters"`
+}
+
+type PokemonDetails struct {
+	BaseExperience int    `json:"base_experience"`
+	ID             int    `json:"id"`
+	Name           string `json:"name"`
 }
 
 // get locations area struct from url
@@ -66,6 +72,20 @@ func GetAreaPokemonNames(url string) ([]string, error) {
 	}
 	pokeNames = makeSliceOfNames(pokeResp)
 	return pokeNames, nil
+}
+
+func GetPokemon(url string) (PokemonDetails, error) {
+	var pokeDetails PokemonDetails
+
+	data, err := fetchData(url)
+	if err != nil {
+		return pokeDetails, err
+	}
+
+	if err := json.Unmarshal(data, &pokeDetails); err != nil {
+		return pokeDetails, err
+	}
+	return pokeDetails, nil
 }
 
 func makeSliceOfNames(pnr PokemonNamesResponse) []string {
